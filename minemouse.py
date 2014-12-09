@@ -1,26 +1,28 @@
 #!/usr/bin/env python2
-import sys, datetime
+import sys, datetime, random, portallog
 sys.path.append("/opt/minecraft-pi/api/python/mcpi")
 import minecraft
 mc = minecraft.Minecraft.create()
-mc.setting("world.immutable", True)
-mc.setting("world.nametagsvisible", True)
 def log(name, msg):
     mc.postToChat("[%s][%s] %s" % (datetime.datetime.now(), name, msg))
-log("map", "Moving player...")
-mc.player.setTilePos(0, 30, 15)
-log("map", "Clearing...")
-mc.setBlocks(-1, 10, -1, 33, 12, 33, 0)
-log("map", "Generating base...")
-mc.setBlocks(-1, 10, -1, 33, 10, 33, 1)
-log("map", "Generating end...")
-mc.setBlocks(15, 10, 15, 17, 10, 17, 41)
-log("map", "Generating walls...")
-mc.setBlocks(0, 11, 0, 0, 11, 32, 45)
-mc.setBlocks(0, 11, 0, 32, 11, 0, 45)
-mc.setBlocks(32, 11, 0, 32, 11, 32, 45)
-mc.setBlocks(0, 11, 32, 32, 11, 32, 45)
-log("map", "World ready for bot!")
+
+def regen():
+    mc.setting("world.immutable", True)
+    mc.setting("world.nametagsvisible", True)
+    log("map", "Moving player...")
+    mc.player.setTilePos(0, 30, 15)
+    log("map", "Clearing...")
+    mc.setBlocks(-1, 10, -1, 33, 12, 33, 0)
+    log("map", "Generating base...")
+    mc.setBlocks(-1, 10, -1, 33, 10, 33, 1)
+    log("map", "Generating end...")
+    mc.setBlocks(15, 10, 15, 17, 10, 17, 41)
+    log("map", "Generating walls...")
+    mc.setBlocks(0, 11, 0, 0, 11, 32, 45)
+    mc.setBlocks(0, 11, 0, 32, 11, 0, 45)
+    mc.setBlocks(32, 11, 0, 32, 11, 32, 45)
+    mc.setBlocks(0, 11, 32, 32, 11, 32, 45)
+    log("map", "World ready for bot!")
 
 class Bot(object):
     class Direction:
@@ -30,7 +32,7 @@ class Bot(object):
         WEST = 3
         NAMES = {0:"north", 1:"east", 2:"south", 3:"west"}
     def __init__(self):
-        self.log("Coming online")
+        self.log(portallog.sayInit())
         self.x = -5
         self.y = 11
         self.z = -5
@@ -61,33 +63,34 @@ class Bot(object):
                 mc.setBlock(self.x, self.y+1, self.z-1, 0)
     def move(self, x, y, d):
         self.render(False)
-        self.log("Heading %s to (%i;%i)" % (self.Direction.NAMES[d], x, y))
+        self.log("%s %s to (%i;%i)" % (portallog.sayMove(),self.Direction.NAMES[d], x, y))
         self.x = x
         self.z = y
         self.d = d
         self.render(True)
     def scan(self, results):
+        self.log(portallog.sayScan())
         walls = ["I see %i walls" % (len(results))]
         if "north" in results:
-            if results["north"] == 1:
+            if results["north"] == 1 or results["north"] == True:
                 mc.setBlock(self.x+1, self.y, self.z, 44)
                 walls.append("one to the north")
             else:
                 mc.setBlock(self.x+1, self.y, self.z, 30)
         if "east" in results:
-            if results["east"] == 1:
+            if results["east"] == 1 or results["east"] == True:
                 mc.setBlock(self.x, self.y, self.z+1, 44)
                 walls.append("one to the east")
             else:
                 mc.setBlock(self.x, self.y, self.z+1, 30)
         if "south" in results:
-            if results["south"] == 1:
+            if results["south"] == 1 or results["south"] == True:
                 mc.setBlock(self.x-1, self.y, self.z, 44)
                 walls.append("one to the south")
             else:
                 mc.setBlock(self.x-1, self.y, self.z, 30)
         if "west" in results:
-            if results["west"] == 1:
+            if results["west"] == 1 or results["west"] == True:
                 mc.setBlock(self.x, self.y, self.z-1, 44)
                 walls.append("one to the west")
             else:
@@ -112,3 +115,6 @@ class Bot(object):
         while self.d != d:
             self.turn(d)
         self.forward(l)
+    def die(self):
+        self.log(portallog.sayDie())
+        self.render(False)
